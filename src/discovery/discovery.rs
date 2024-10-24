@@ -256,7 +256,11 @@ impl Discovery {
   const PARTICIPANT_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(2);
   const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
   const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
-  const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
+  // const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
+  fn check_participant_messages() -> StdDuration {
+    let rand: u64 = rand::random();
+    StdDuration::from_millis(rand % (10 * 1000))
+  }
   #[cfg(feature = "security")]
   const CACHED_SECURE_DISCOVERY_MESSAGE_RESEND_PERIOD: StdDuration = StdDuration::from_secs(1);
 
@@ -509,7 +513,7 @@ impl Discovery {
       DISCOVERY_PARTICIPANT_MESSAGE_TOKEN,
       EntityId::P2P_BUILTIN_PARTICIPANT_MESSAGE_WRITER,
       Some((
-        Self::CHECK_PARTICIPANT_MESSAGES,
+        Self::check_participant_messages(),
         DISCOVERY_PARTICIPANT_MESSAGE_TIMER_TOKEN,
       )),
     );
@@ -846,7 +850,7 @@ impl Discovery {
             self
               .dcps_participant_message
               .timer
-              .set_timeout(Self::CHECK_PARTICIPANT_MESSAGES, ());
+              .set_timeout(Self::check_participant_messages(), ());
           }
           SPDP_LIVENESS_TOKEN => {
             while let Ok(guid_prefix) = self.spdp_liveness_receiver.try_recv() {
