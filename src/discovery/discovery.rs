@@ -253,7 +253,11 @@ pub(crate) struct Discovery {
 }
 
 impl Discovery {
-  const PARTICIPANT_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(2);
+  // const PARTICIPANT_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(2);
+  fn participant_cleanup_period() -> StdDuration {
+    let rand: u64 = rand::random();
+    StdDuration::from_millis(rand % (10 * 1000))
+  }
   const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
   const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
   const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
@@ -426,7 +430,7 @@ impl Discovery {
 
     // create lease duration check timer
     let mut participant_cleanup_timer: Timer<()> = new_simple_timer();
-    participant_cleanup_timer.set_timeout(Self::PARTICIPANT_CLEANUP_PERIOD, ());
+    participant_cleanup_timer.set_timeout(Self::participant_cleanup_period(), ());
     try_construct!(
       poll.register(
         &participant_cleanup_timer,
@@ -806,7 +810,7 @@ impl Discovery {
             // setting next cleanup timeout
             self
               .participant_cleanup_timer
-              .set_timeout(Self::PARTICIPANT_CLEANUP_PERIOD, ());
+              .set_timeout(Self::participant_cleanup_period(), ());
           }
 
           DISCOVERY_SEND_PARTICIPANT_INFO_TOKEN => {
