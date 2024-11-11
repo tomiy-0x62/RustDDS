@@ -255,7 +255,12 @@ pub(crate) struct Discovery {
 impl Discovery {
   const PARTICIPANT_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(2);
   const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
-  const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
+                                                                        // const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
+  fn send_participant_info_period() -> StdDuration {
+    let rand: u64 = rand::random();
+    // range 1s - 10s
+    StdDuration::from_millis(rand % (9 * 1000) + 1000)
+  }
   const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
   #[cfg(feature = "security")]
   const CACHED_SECURE_DISCOVERY_MESSAGE_RESEND_PERIOD: StdDuration = StdDuration::from_secs(1);
@@ -419,7 +424,7 @@ impl Discovery {
       DISCOVERY_PARTICIPANT_DATA_TOKEN,
       EntityId::SPDP_BUILTIN_PARTICIPANT_WRITER,
       Some((
-        Self::SEND_PARTICIPANT_INFO_PERIOD,
+        Self::send_participant_info_period(),
         DISCOVERY_SEND_PARTICIPANT_INFO_TOKEN,
       )),
     );
@@ -820,7 +825,7 @@ impl Discovery {
             self
               .dcps_participant
               .timer
-              .set_timeout(Self::SEND_PARTICIPANT_INFO_PERIOD, ());
+              .set_timeout(Self::send_participant_info_period(), ());
           }
           DISCOVERY_READER_DATA_TOKEN => {
             self.handle_subscription_reader(None);
@@ -1326,7 +1331,7 @@ impl Discovery {
     let data = SpdpDiscoveredParticipantData::from_local_participant(
       local_dp,
       &self.security_opt,
-      5.0 * Duration::from(Self::SEND_PARTICIPANT_INFO_PERIOD),
+      5.0 * Duration::from(Self::send_participant_info_period()),
     );
 
     #[cfg(feature = "security")]
