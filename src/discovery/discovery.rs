@@ -258,8 +258,8 @@ impl Discovery {
                                                                         // const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
   fn send_participant_info_period() -> StdDuration {
     let rand: u64 = rand::random();
-    // range 1s - 10s
-    StdDuration::from_millis(rand % (9 * 1000) + 1000)
+    // range 1s - 30s
+    StdDuration::from_millis(rand % (29 * 1000) + 1000)
     /*
     StdDuration::from_secs(20)
     */
