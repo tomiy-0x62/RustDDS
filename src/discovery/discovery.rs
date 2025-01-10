@@ -257,10 +257,13 @@ impl Discovery {
   const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
                                                                         // const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
   fn send_participant_info_period() -> StdDuration {
-    // let rand: u64 = rand::random();
-    // range 1s - 30s
-    // StdDuration::from_millis(rand % (29 * 1000) + 1000)
-    StdDuration::from_secs(30)
+    use rand::distributions::Distribution;
+    let uniform = rand::distributions::Uniform::new_inclusive(0.9, 1.1);
+    let mut rng = rand::thread_rng();
+    let rand = uniform.sample(&mut rng);
+    // range 30s ± 10%
+    StdDuration::from_secs_f64(30. * rand)
+    // StdDuration::from_secs(30)
   }
   const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
   #[cfg(feature = "security")]
@@ -818,7 +821,9 @@ impl Discovery {
           DISCOVERY_SEND_PARTICIPANT_INFO_TOKEN => {
             let pdp_period = Self::send_participant_info_period();
             if let Some(dp) = self.domain_participant.clone().upgrade() {
-              self.send_participant_info(&dp, pdp_period);
+              // self.send_participant_info(&dp, pdp_period);
+              // fix lease_duration to 30s * 5
+              self.send_participant_info(&dp, StdDuration::from_secs(30));
             } else {
               error!("DomainParticipant doesn't exist anymore, exiting Discovery.");
               return;
