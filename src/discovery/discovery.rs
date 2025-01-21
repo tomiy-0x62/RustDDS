@@ -257,6 +257,7 @@ impl Discovery {
   const TOPIC_CLEANUP_PERIOD: StdDuration = StdDuration::from_secs(60); // timer for cleaning up inactive topics
                                                                         // const SEND_PARTICIPANT_INFO_PERIOD: StdDuration = StdDuration::from_secs(2);
   fn send_participant_info_period() -> StdDuration {
+    /*
     use rand::distributions::Distribution;
     let uniform = rand::distributions::Uniform::new_inclusive(0.9, 1.1);
     let mut rng = rand::thread_rng();
@@ -264,6 +265,8 @@ impl Discovery {
     // range 30s ± 10%
     StdDuration::from_secs_f64(30. * rand)
     // StdDuration::from_secs(30)
+    */
+    StdDuration::from_secs(2)
   }
   const CHECK_PARTICIPANT_MESSAGES: StdDuration = StdDuration::from_secs(1);
   #[cfg(feature = "security")]
@@ -987,6 +990,19 @@ impl Discovery {
     let guid_prefix = participant_data.participant_guid.prefix;
     self.send_discovery_notification(DiscoveryNotificationType::ParticipantUpdated { guid_prefix });
     if was_new {
+      let log_file_str: String = format!(
+        "/root/log/participant/{:?}.log",
+        self.domain_participant.guid_prefix()
+      );
+      let log_file_path = std::path::Path::new(&log_file_str);
+      let mut log_file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_file_path)
+        .expect("falied open log file");
+      use std::io::Write;
+      let time = Timestamp::now().to_ticks();
+      writeln!(log_file, "{},{:?},+1", time, guid_prefix).expect("failed write log");
       let dpd = participant_data.into();
       self.send_participant_status(DomainParticipantStatusEvent::ParticipantDiscovered { dpd });
       // This may be a rediscovery of a previously seen participant that
@@ -1001,6 +1017,19 @@ impl Discovery {
   }
 
   fn process_participant_dispose(&mut self, participant_guidp: GuidPrefix) {
+    let log_file_str: String = format!(
+      "/root/log/participant/{:?}.log",
+      self.domain_participant.guid_prefix()
+    );
+    let log_file_path = std::path::Path::new(&log_file_str);
+    let mut log_file = std::fs::OpenOptions::new()
+      .create(true)
+      .append(true)
+      .open(log_file_path)
+      .expect("falied open log file");
+    use std::io::Write;
+    let time = Timestamp::now().to_ticks();
+    writeln!(log_file, "{},{:?},-1", time, participant_guidp).expect("failed write log");
     discovery_db_write(&self.discovery_db).remove_participant(participant_guidp, true); // true = actively removed
     self.send_discovery_notification(DiscoveryNotificationType::ParticipantLost {
       guid_prefix: participant_guidp,
